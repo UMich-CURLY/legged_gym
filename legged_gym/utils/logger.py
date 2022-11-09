@@ -32,6 +32,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
 from multiprocessing import Process, Value
+import logging
 
 class Logger:
     def __init__(self, dt):
@@ -63,8 +64,8 @@ class Logger:
         self.plot_process.start()
 
     def _plot(self):
-        nb_rows = 3
-        nb_cols = 3
+        nb_rows = 4
+        nb_cols = 4
         fig, axs = plt.subplots(nb_rows, nb_cols)
         for key, value in self.state_log.items():
             time = np.linspace(0, len(value)*self.dt, len(value))
@@ -113,13 +114,29 @@ class Logger:
                 a.plot(time, forces[:, i], label=f'force {i}')
         a.set(xlabel='time [s]', ylabel='Forces z [N]', title='Vertical Contact forces')
         a.legend()
-        # plot torque/vel curves
+        # plot contac forces 
         a = axs[2, 1]
+        if log["contact_forces"]:
+            forces = np.array(log["contact_forces"])
+            for i in range(forces.shape[1]):
+                a.plot(time, forces[:, i], label=f'force {i}')
+        a.set(xlabel='time [s]', ylabel='Forces [N]', title='Contact forces')
+        a.legend()
+        # plot contact positions
+        a = axs[2, 2]
+        if log["contact_positions"]:
+            positions = np.array(log["contact_positions"])
+            for i in range(positions.shape[1]):
+                a.plot(time, positions[:, i], label=f'pos {i}')
+        a.set(xlabel='time [s]', ylabel='Positions [m]', title='Contact positions')
+        a.legend()
+        # plot torque/vel curves
+        a = axs[3, 0]
         if log["dof_vel"]!=[] and log["dof_torque"]!=[]: a.plot(log["dof_vel"], log["dof_torque"], 'x', label='measured')
         a.set(xlabel='Joint vel [rad/s]', ylabel='Joint Torque [Nm]', title='Torque/velocity curves')
         a.legend()
         # plot torques
-        a = axs[2, 2]
+        a = axs[3, 1]
         if log["dof_torque"]!=[]: a.plot(time, log["dof_torque"], label='measured')
         a.set(xlabel='time [s]', ylabel='Joint Torque [Nm]', title='Torque')
         a.legend()
@@ -131,6 +148,19 @@ class Logger:
             mean = np.sum(np.array(values)) / self.num_episodes
             print(f" - {key}: {mean}")
         print(f"Total number of episodes: {self.num_episodes}")
+    
+    def save(self, path): # save the log to a file using logging
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        fh = logging.FileHandler(path)
+        fh.setLevel(logging.INFO)
+        logger.addHandler(fh)
+        logger.info(self.state_log)
+        logger.info(self.rew_log)
+        logger.info(self.num_episodes)
+        logger.removeHandler(fh)
+        fh.close()
+
     
     def __del__(self):
         if self.plot_process is not None:
