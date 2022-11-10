@@ -51,6 +51,7 @@ class LeggedRobotCfg(BaseConfig):
         restitution = 0.
         # rough terrain only:
         measure_heights = True
+        draw_contacts = True
         measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
         measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
         selected = False # select a unique terrain type and pass all arguments
@@ -70,13 +71,16 @@ class LeggedRobotCfg(BaseConfig):
         curriculum = False
         max_curriculum = 1.
         num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
-        resampling_time = 10. # time before command are changed[s]
+        resampling_time = 1000000. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-1.0, 1.0] # min max [m/s]
-            lin_vel_y = [-1.0, 1.0]   # min max [m/s]
-            ang_vel_yaw = [-1, 1]    # min max [rad/s]
-            heading = [-3.14, 3.14]
+            lin_vel_x = [-0.0, 0.0] # min max [m/s]
+            # lin_vel_y = [-1.0, 1.0]   # min max [m/s]
+            lin_vel_y = [-0.0, 0.0]   # min max [m/s]
+            # ang_vel_yaw = [-1, 1]    # min max [rad/s]
+            ang_vel_yaw = [-0.0, 0.0]    # min max [rad/s]
+            # heading = [-3.14, 3.14]
+            heading = [-0.0, 0.0]
 
     class init_state:
         pos = [0.0, 0.0, 1.] # x,y,z [m]

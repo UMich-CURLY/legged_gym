@@ -94,10 +94,7 @@ class LeggedRobot(BaseTask):
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
         self.post_physics_step()
-
-        # for env in self.envs:
-        #     contacts = self.gym.get_env_rigid_contacts(env)
-        #     print(contacts)
+        
         
         # return clipped obs, clipped states (None), rewards, dones and infos
         clip_obs = self.cfg.normalization.clip_observations
@@ -147,7 +144,7 @@ class LeggedRobot(BaseTask):
         #     self.rigid_body_lin_vel[:, i, :] = quat_rotate_inverse(self.rigid_body_quat[:, i, :], self.rigid_body_states[:, i, 7:10])
         #     self.rigid_body_ang_vel[:, i, :] = quat_rotate_inverse(self.rigid_body_quat[:, i, :], self.rigid_body_states[:, i, 10:13])
 
-
+        # print('Contacts: ', self.contacts_results)
         self._post_physics_step_callback()
 
         # compute observations, rewards, resets, ...
@@ -165,9 +162,12 @@ class LeggedRobot(BaseTask):
         self.last_root_vel[:] = self.root_states[:, 7:13]
         self.last_base_lin_vel[:] = self.base_lin_vel[:]
         # self.last_rigid_body_base_lin_vel[:] = self.rigid_body_lin_vel[:, :, :]
-
+        
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
+            # self._draw_contact_debug_vis()
+        
+        
 
     def check_termination(self):
         """ Check if environments need to be reset
@@ -526,6 +526,7 @@ class LeggedRobot(BaseTask):
         rigib_body_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
         # added
         sensor_tensor = self.gym.acquire_force_sensor_tensor(self.sim)
+        
 
 
         self.gym.refresh_dof_state_tensor(self.sim)
@@ -763,7 +764,7 @@ class LeggedRobot(BaseTask):
             sensor_options = gymapi.ForceSensorProperties()
             sensor_options.enable_forward_dynamics_forces = False # for example gravity
             sensor_options.enable_constraint_solver_forces = True # for example contacts
-            sensor_options.use_world_frame = True # report forces in world frame (easier to get vertical components)
+            sensor_options.use_world_frame = False # report forces in world frame (easier to get vertical components)
             index = self.gym.find_asset_rigid_body_index(robot_asset, name)
             self.gym.create_asset_force_sensor(robot_asset, index, sensor_pose, sensor_options)
 
@@ -786,12 +787,14 @@ class LeggedRobot(BaseTask):
             self.gym.set_actor_rigid_body_properties(env_handle, actor_handle, body_props, recomputeInertia=True)
             self.envs.append(env_handle)
             self.actor_handles.append(actor_handle)
-            # num_sensors = self.gym.get_actor_force_sensor_count(env_handle, actor_handle)
-            # sensors_robot = []
-            # for j in range(num_sensors):
-            #     sensor = self.gym.get_actor_force_sensor(env_handle, actor_handle, j)
-            #     sensors_robot.append(sensor)
-            # self.sensors_list.append(sensors_robot)
+
+
+        # for env_i in self.envs:
+        #     actor_count = self.gym.get_actor_count(env_i)
+        #     for i in range(actor_count):
+        #         actor_handle = self.gym.get_actor_handle(env_i, i)
+        #         self.contacts_results = self.gym.get_env_rigid_contacts(env_i)
+                
 
 
         
@@ -853,7 +856,7 @@ class LeggedRobot(BaseTask):
             Default behaviour: draws height measurement points
         """
         # draw height lines
-        if not self.terrain.cfg.measure_heights:
+        if not self.cfg.terrain.measure_heights:
             return
         self.gym.clear_lines(self.viewer)
         self.gym.refresh_rigid_body_state_tensor(self.sim)
@@ -869,6 +872,21 @@ class LeggedRobot(BaseTask):
                 z = heights[j]
                 sphere_pose = gymapi.Transform(gymapi.Vec3(x, y, z), r=None)
                 gymutil.draw_lines(sphere_geom, self.gym, self.viewer, self.envs[i], sphere_pose) 
+
+
+    def _draw_contact_debug_vis(self):
+        """ Draws visualizations for contact dubugging (slows down simulation a lot).
+            Default behaviour: draws contact measurement forces
+        """
+        # draw height lines
+        if not self.cfg.terrain.draw_contacts:
+            return
+        self.gym.clear_lines(self.viewer)
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
+        for i in range(self.num_envs):
+            color = gymapi.Vec3(1, 0, 0)
+            scale = 0.1
+            self.gym.draw_env_rigid_contacts(self.viewer,self.envs[i],color,scale,1)
 
     def _init_height_points(self):
         """ Returns points at which the height measurments are sampled (in base frame)
@@ -1017,8 +1035,8 @@ class LeggedRobot(BaseTask):
     def _reward_feet_air_time(self):
         # Reward long steps
         # Need to filter the contacts because the contact reporting of PhysX is unreliable on meshes
-        contact = self.contact_forces[:, self.feet_indices, 2] > 1.
-        # contact = self.sensor_forces[:, :, 2] > 1.
+        # contact = self.contact_forces[:, self.feet_indices, 2] > 1.
+        contact = self.sensor_forces[:, :, 2] > 1.
         contact_filt = torch.logical_or(contact, self.last_contacts) 
         self.contact = contact_filt
         # print(contact_filt)

@@ -112,7 +112,7 @@ def main():
         plt.subplot(2, 2, i+1)
         # plot the contact force fy vs contact force fz for the contact indices of the leg
         # absolute value of the contact force fz
-        plt.plot(np.abs(data['contact_force_z_' + feet_order[i]][contact_indices[feet_order[i]]]), np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]]), '.')
+        plt.plot(np.abs(data['contact_force_z_' + feet_order[i]][contact_indices[feet_order[i]]]), np.sqrt(np.abs(data['contact_forces_world_y_' + feet_order[i]][contact_indices[feet_order[i]]])**2 +  np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]])**2), '.')
         plt.xlabel('contact force fz')
         plt.ylabel('contact force fx')
         # create a subplot for each leg
@@ -132,17 +132,19 @@ def main():
     for i in range(4):
         plt.subplot(2, 2, i+1)
         # plot the ratio of the contact force fy vs contact force fz for the contact indices of the leg
-        # print(data['contact_force_x_' + feet_order[i]][contact_indices[feet_order[i]]])
-        temp_mat = np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]]/data['contact_force_z_' + feet_order[i]][contact_indices[feet_order[i]]])
+        # print(data['contact_force_y_' + feet_order[i]][contact_indices[feet_order[i]]])
+        temp_mat = np.sqrt(np.abs(data['contact_forces_world_y_' + feet_order[i]][contact_indices[feet_order[i]]])**2 +  np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]])**2)/np.abs(data['contact_force_z_' + feet_order[i]][contact_indices[feet_order[i]]])
         temp_mat[temp_mat > 2.0] = 2.0
         plt.plot(data['time'][contact_indices[feet_order[i]]],temp_mat, '.')
 
-        plt.plot(data['time'][contact_indices[feet_order[i]]],np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]]/data['contact_force_z_' + feet_order[i]][contact_indices[feet_order[i]]])/(1-np.exp(-x/a)), '.', color='black')
+        # plt.plot(data['time'][contact_indices[feet_order[i]]],np.sqrt(np.abs(data['contact_forces_world_y_' + feet_order[i]][contact_indices[feet_order[i]]])**2 +  np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]])**2)/np.abs(data['contact_force_z_' + feet_order[i]][contact_indices[feet_order[i]]])/(1-np.exp(-x/a)), '.', color='black')
         plt.plot(data['time'],(data['robot_static_friction'] + data['ground_plane_static_friction'])/2, '-', color='red')
         plt.legend(['linear', 'exponential', 'ground truth average'])
         plt.xlabel('time')
         plt.ylabel('friction coefficient') 
         plt.title("Foot Frame")
+        # put a title for all the subplots
+        plt.suptitle('Friction Coefficient vs Time where mu_s=' + str((data['robot_static_friction'][1] + data['ground_plane_static_friction'][1])/2) + ' and mu_k=' + str(data['ground_plane_dynamic_friction'][1]), fontsize=16)
     if save == 'yes':
         plt.savefig(save_path + '/' + save_name + '_' + feet_order[i] + '.' + save_format)
     if show == 'yes':
@@ -153,7 +155,7 @@ def main():
         # create a subplot for each leg
         plt.subplot(2, 2, i+1)
         # plot the contact force fy vs contact force fz for the contact indices of the leg
-        plt.plot(np.abs(data['contact_forces_world_z_' + feet_order[i]][contact_indices[feet_order[i]]]), np.abs(data['contact_force_x_' + feet_order[i]][contact_indices[feet_order[i]]]), '.')
+        plt.plot(np.abs(data['contact_forces_world_z_' + feet_order[i]][contact_indices[feet_order[i]]]), np.sqrt(np.abs(data['contact_forces_world_y_' + feet_order[i]][contact_indices[feet_order[i]]])**2 +  np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]])**2), '.')
         plt.xlabel('contact force fz')
         plt.ylabel('contact force fx')
         # create a subplot for each leg
@@ -171,17 +173,37 @@ def main():
     for i in range(4):
         plt.subplot(2, 2, i+1)
         # plot the ratio of the contact force fy vs contact force fz for the contact indices of the leg
-        temp_mat = np.abs(data['contact_force_x_' + feet_order[i]][contact_indices[feet_order[i]]]/data['contact_forces_world_z_' + feet_order[i]][contact_indices[feet_order[i]]])
+        temp_mat = np.abs(np.sqrt(np.abs(data['contact_forces_world_y_' + feet_order[i]][contact_indices[feet_order[i]]])**2 +  np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]])**2)/data['contact_forces_world_z_' + feet_order[i]][contact_indices[feet_order[i]]])
         # cap the temp_mat at 2.0
         temp_mat[temp_mat > 2.0] = 2.0
         plt.plot(data['time'][contact_indices[feet_order[i]]],temp_mat, '.')
-
-        # plt.plot(data['time'][contact_indices[feet_order[i]]],np.abs(data['contact_force_x_' + feet_order[i]][contact_indices[feet_order[i]]]/data['contact_forces_world_z_' + feet_order[i]][contact_indices[feet_order[i]]])/(1-np.exp(-x/a)), '.', color='black')
+        
+        plt.plot(data['time'][contact_indices[feet_order[i]]],np.sqrt(np.abs(data['contact_forces_world_y_' + feet_order[i]][contact_indices[feet_order[i]]])**2 +  np.abs(data['contact_forces_world_x_' + feet_order[i]][contact_indices[feet_order[i]]])**2)/np.abs(data['contact_force_z_' + feet_order[i]][contact_indices[feet_order[i]]])/(1-np.exp(-x/a)), '.', color='black')
         plt.plot(data['time'],(data['robot_static_friction'] + data['ground_plane_static_friction'])/2, '-', color='red')
         plt.legend(['linear', 'exponential', 'ground truth average'])
         plt.xlabel('time')
         plt.ylabel('friction coefficient') 
         plt.title("World Frame")
+    if save == 'yes':
+        plt.savefig(save_path + '/' + save_name + '_' + feet_order[i] + '.' + save_format)
+    if show == 'yes':
+        plt.show()
+
+    # get an array where the time is less than 10 seconds
+    time_less_than_10 = data['time'] < 20
+    # get the indices where the time is less than 10 seconds
+    time_less_than_10_indices = np.where(time_less_than_10 == True)[0]
+
+    plt.figure()
+    for i in range(4):
+        plt.subplot(2, 2, i+1)
+        # plot the the contact force fz versus time for the contact indices of the leg
+        plt.plot(data['time'][time_less_than_10_indices], np.sqrt(data['contact_force_y_' + feet_order[i]][time_less_than_10_indices]**2 + data['contact_force_x_' + feet_order[i]][time_less_than_10_indices]**2), '.')
+        plt.plot(data['time'][time_less_than_10_indices], np.sqrt(data['contact_forces_world_y_' + feet_order[i]][time_less_than_10_indices]**2 + data['contact_forces_world_x_' + feet_order[i]][time_less_than_10_indices]**2), '.', color='black')
+        plt.xlabel('time')
+        plt.ylabel('contact force fz')
+        plt.legend(['contact force','sensor force'])
+        plt.title(feet_order[i])
     if save == 'yes':
         plt.savefig(save_path + '/' + save_name + '_' + feet_order[i] + '.' + save_format)
     if show == 'yes':

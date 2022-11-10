@@ -156,11 +156,6 @@ def play(args):
                 'contact_RR': env.contact[robot_index][3].cpu().numpy().item()*1,
             }
         )
-        # print(env.contact_forces[robot_index, env.feet_indices[0], 0].cpu().numpy())
-        # print(env.contact_forces[robot_index, env.feet_indices[1], 0].cpu().numpy())
-        # print(env.contact_forces[robot_index, env.feet_indices[2], 0].cpu().numpy())
-        # print(env.contact_forces[robot_index, env.feet_indices[3], 0].cpu().numpy())
-
 
         # if this is the first iteration of the episode, create a .log file using logging module
         if i == 20:
