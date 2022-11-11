@@ -115,6 +115,34 @@ class LeggedRobot(BaseTask):
         R_inv = torch.inverse(R).to(self.device)
         return torch.matmul(R_inv, v)
 
+    def quat_rotate_inverse_tsl(self, q, v):
+        x = q[:, 0]
+        y = q[:, 1]
+        z = q[:, 2]
+        w = q[:, 3]
+        # print(q.shape)
+        # print(v.shape)
+        # print(x.shape)
+        # print(y.shape)
+        # print(z.shape)
+        # print(w.shape)
+        R = torch.zeros((q.shape[0], 3, 3))
+        R[:, 0, 0] = 1-2*y**2-2*z**2
+        R[:, 0, 1] = 2*x*y-2*w*z
+        R[:, 0, 2] = 2*x*z+2*w*y
+        R[:, 1, 0] = 2*x*y+2*w*z
+        R[:, 1, 1] = 1-2*x**2-2*z**2
+        R[:, 1, 2] = 2*y*z-2*w*x
+        R[:, 2, 0] = 2*x*z-2*w*y
+        R[:, 2, 1] = 2*y*z+2*w*x
+        R[:, 2, 2] = 1-2*x**2-2*y**2
+        # print(R.shape)
+        R_inv = torch.inverse(R).to(self.device)
+        # print(R_inv.shape)
+        # print(v.shape)
+        return torch.matmul(R_inv, v.unsqueeze(2)).squeeze(2)
+
+
     def post_physics_step(self):
         """ check terminations, compute observations and rewards
             calls self._post_physics_step_callback() for common computations 
@@ -134,9 +162,11 @@ class LeggedRobot(BaseTask):
         self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
 
         self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
-        for i in range(self.num_envs):
-            for j in range(self.feet_indices.shape[0]):
-                self.contact_forces_world[i, j,:] = self.quat_rotate_inverse_theo(self.rigid_body_quat[i, self.feet_indices[j],:], self.contact_forces[i, self.feet_indices[j], :])
+        # for i in range(self.num_envs):
+        #     for j in range(self.feet_indices.shape[0]):
+        #         self.contact_forces_world[i, j,:] = self.quat_rotate_inverse_theo(self.rigid_body_quat[i, self.feet_indices[j],:], self.contact_forces[i, self.feet_indices[j], :])
+        for j in range(self.feet_indices.shape[0]):
+            self.contact_forces_world[:, j,:] = self.quat_rotate_inverse_tsl(self.rigid_body_quat[:, self.feet_indices[j],:], self.contact_forces[:, self.feet_indices[j], :])
         # self.rigid_body_quat = self.rigid_body_states[:, :, 3:7]
             
         # for i in range(self.num_bodies):
@@ -762,7 +792,7 @@ class LeggedRobot(BaseTask):
 
         for name in feet_names:
             sensor_options = gymapi.ForceSensorProperties()
-            sensor_options.enable_forward_dynamics_forces = False # for example gravity
+            sensor_options.enable_forward_dynamics_forces = True # for example gravity
             sensor_options.enable_constraint_solver_forces = True # for example contacts
             sensor_options.use_world_frame = False # report forces in world frame (easier to get vertical components)
             index = self.gym.find_asset_rigid_body_index(robot_asset, name)

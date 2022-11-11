@@ -46,8 +46,8 @@ class LeggedRobotCfg(BaseConfig):
         vertical_scale = 0.005 # [m]
         border_size = 25 # [m]
         curriculum = True
-        static_friction = 1
-        dynamic_friction = 1
+        static_friction = 1.0
+        dynamic_friction = 1.0
         restitution = 0.
         # rough terrain only:
         measure_heights = True
@@ -74,7 +74,7 @@ class LeggedRobotCfg(BaseConfig):
         resampling_time = 1000000. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-0.0, 0.0] # min max [m/s]
+            lin_vel_x = [0.0, 0.0] # min max [m/s]
             # lin_vel_y = [-1.0, 1.0]   # min max [m/s]
             lin_vel_y = [-0.0, 0.0]   # min max [m/s]
             # ang_vel_yaw = [-1, 1]    # min max [rad/s]
@@ -125,7 +125,7 @@ class LeggedRobotCfg(BaseConfig):
 
     class domain_rand:
         randomize_friction = True
-        friction_range = [1, 1]#[0.1, 1.25]
+        friction_range = [1.0, 1.0]#[0.1, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
         push_robots = True
